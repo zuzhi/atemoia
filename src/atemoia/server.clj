@@ -46,20 +46,24 @@
                                        ["SELECT * FROM todo"])}
                              (catch Throwable ex
                                {:error (ex-message ex)}))
-                     ->hiccup (fn ->hiccup [vs]
+                     ->hiccup (fn ->hiccup
+                                [k vs]
                                 (cond
-                                  (map? vs) (into {}
-                                              (remove (fn [[k v]]
+                                  (map? vs) (into (if (= k :input)
+                                                    {:disabled true}
+                                                    {})
+                                              (remove (fn [[_ v]]
                                                         (fn? v)))
                                               vs)
                                   (vector? vs) (if (fn? (first vs))
-                                                 (->hiccup (apply (first vs) (rest vs)))
-                                                 (mapv ->hiccup vs))
+                                                 (->hiccup k (apply (first vs) (rest vs)))
+                                                 (mapv (partial ->hiccup (first vs))
+                                                   vs))
                                   :else vs))]
                  [:div {:data-initial-state (json/generate-string state)
                         :id                 "atemoia"}
                   (binding [client/*state (atom state)]
-                    (->hiccup [client/ui-root]))])
+                    (->hiccup nil [client/ui-root]))])
                [:script {:src "/atemoia/main.js"}]]]]
     {:body    (->> html
                 (h/html {:mode :html})
