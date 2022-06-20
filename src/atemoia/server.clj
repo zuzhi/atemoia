@@ -114,7 +114,7 @@
                                            (-> ctx
                                              (update :request merge service-map)))})))))
 
-(defonce state
+(defonce *state
   (atom nil))
 
 (defn -main
@@ -123,7 +123,7 @@
         port (parse-long (get env "PORT" "8080"))
         database-url (get env "DATABASE_URL" "postgres://postgres:postgres@127.0.0.1:5432/postgres")
         atm-conn-jdbc-url (database->jdbc-url database-url)]
-    (swap! state
+    (swap! *state
       (fn [st]
         (some-> st http/stop)
         (-> {::http/port      port

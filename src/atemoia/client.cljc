@@ -1,6 +1,6 @@
 (ns atemoia.client
-  (:require [reagent.core :as r]
-            #?(:cljs [reagent.dom :as rd])))
+  #?(:cljs (:require [reagent.core :as r]
+                     [reagent.dom :as rd])))
 
 
 #?(:cljs    (defonce *state (r/atom {}))
