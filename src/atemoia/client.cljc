@@ -72,7 +72,7 @@
   #?(:cljs (let [root (js/document.getElementById "atemoia")]
              (when-not (some-> root
                          .-dataset
-                         .-initialState
+                         ^js .-initialState
                          js/JSON.parse
                          (js->clj :keywordize-keys true)
                          (->> (reset! *state)))
