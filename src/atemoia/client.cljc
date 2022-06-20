@@ -1,6 +1,7 @@
 (ns atemoia.client
   #?(:cljs (:require [reagent.core :as r]
-                     [reagent.dom :as rd])))
+                     [reagent.dom :as rd]
+                     [goog.object :as gobj])))
 
 
 #?(:cljs    (defonce *state (r/atom {}))
@@ -71,8 +72,7 @@
   []
   #?(:cljs (let [root (js/document.getElementById "atemoia")]
              (when-not (some-> root
-                         .-dataset
-                         ^js .-initialState
+                         (gobj/getValueByKeys "dataset" "initialState")
                          js/JSON.parse
                          (js->clj :keywordize-keys true)
                          (->> (reset! *state)))
