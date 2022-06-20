@@ -1,7 +1,7 @@
 (ns atemoia.client
   #?(:cljs (:require [reagent.core :as r]
-                     [reagent.dom :as rd]
-                     [goog.object :as gobj])))
+             [reagent.dom :as rd]
+             [goog.object :as gobj])))
 
 
 #?(:cljs    (defonce *state (r/atom {}))
