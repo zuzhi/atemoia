@@ -5,6 +5,7 @@
             [clojure.string :as string]
             [hiccup2.core :as h]
             [io.pedestal.http :as http]
+            [atemoia.client :as client]
             [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :as interceptor]
             [next.jdbc :as jdbc])
@@ -40,13 +41,25 @@
                        :content "A simple full-stack clojure app"}]
                [:title "atemoia"]]
               [:body
-               [:div {:data-initial-state (json/generate-string
-                                            (try
-                                              {:todos (jdbc/execute! atm-conn
-                                                        ["SELECT * FROM todo"])}
-                                              (catch Throwable ex
-                                                {:error (ex-message ex)})))
-                      :id                 "atemoia"} "loading ..."]
+               (let [state (try
+                             {:todos (jdbc/execute! atm-conn
+                                       ["SELECT * FROM todo"])}
+                             (catch Throwable ex
+                               {:error (ex-message ex)}))
+                     ->hiccup (fn ->hiccup [vs]
+                                (cond
+                                  (map? vs) (into {}
+                                              (remove (fn [[k v]]
+                                                        (fn? v)))
+                                              vs)
+                                  (vector? vs) (if (fn? (first vs))
+                                                 (->hiccup (apply (first vs) (rest vs)))
+                                                 (mapv ->hiccup vs))
+                                  :else vs))]
+                 [:div {:data-initial-state (json/generate-string state)
+                        :id                 "atemoia"}
+                  (binding [client/*state (atom state)]
+                    (->hiccup [client/ui-root]))])
                [:script {:src "/atemoia/main.js"}]]]]
     {:body    (->> html
                 (h/html {:mode :html})
@@ -131,7 +144,7 @@
   (-> `shadow.cljs.devtools.server/start!
     requiring-resolve
     (apply []))
-  (-> `shadow.cljs.devtools.api/release
+  (-> `shadow.cljs.devtools.api/watch
     requiring-resolve
     (apply [:atemoia]))
   (-main))
