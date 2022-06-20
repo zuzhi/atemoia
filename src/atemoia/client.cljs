@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [reagent.dom :as rd]))
 
-(defonce state (r/atom {}))
+(defonce *state (r/atom {}))
 
 (defn fetch-todos
   []
@@ -11,17 +11,17 @@
              (when-not (.-ok response)
                (throw (ex-info (.-statusText response)
                         {:response response})))
-             (swap! state dissoc :error)
+             (swap! *state dissoc :error)
              (.json response)))
     (.then (fn [todos]
-             (swap! state assoc :todos (js->clj todos
-                                         :keywordize-keys true))))
+             (swap! *state assoc :todos (js->clj todos
+                                          :keywordize-keys true))))
     (.catch (fn [ex]
-              (swap! state assoc :error (ex-message ex))))))
+              (swap! *state assoc :error (ex-message ex))))))
 
 (defn ui-root
   []
-  (let [{:keys [error todos]} @state]
+  (let [{:keys [error todos]} @*state]
     [:div
      [:p "This is a sample clojure app to demonstrate how to use "
       [:a {:href "https://clojure.org/guides/tools_build"}
@@ -67,9 +67,16 @@
 
 (defn start
   []
-  (some->> (js/document.getElementById "atemoia")
-    (rd/render [ui-root]))
-  (fetch-todos))
+  (let [root (js/document.getElementById "atemoia")]
+    (when-not (some-> root
+                .-dataset
+                .-initialState
+                js/JSON.parse
+                (js->clj :keywordize-keys true)
+                (->> (reset! *state)))
+      (fetch-todos))
+    (some->> root
+      (rd/render [ui-root]))))
 
 (defn after-load
   []

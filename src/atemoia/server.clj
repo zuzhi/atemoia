@@ -27,7 +27,7 @@
     (str (URI. "jdbc" (str base-uri) nil))))
 
 (defn index
-  [_]
+  [{::keys [atm-conn]}]
   (let [html [:html {:lang "en"}
               [:head
                [:meta {:charset "UTF-8"}]
@@ -40,7 +40,13 @@
                        :content "A simple full-stack clojure app"}]
                [:title "atemoia"]]
               [:body
-               [:div {:id "atemoia"} "loading ..."]
+               [:div {:data-initial-state (json/generate-string
+                                            (try
+                                              {:todos (jdbc/execute! atm-conn
+                                                        ["SELECT * FROM todo"])}
+                                              (catch Throwable ex
+                                                {:error (ex-message ex)})))
+                      :id                 "atemoia"} "loading ..."]
                [:script {:src "/atemoia/main.js"}]]]]
     {:body    (->> html
                 (h/html {:mode :html})
@@ -125,7 +131,7 @@
   (-> `shadow.cljs.devtools.server/start!
     requiring-resolve
     (apply []))
-  (-> `shadow.cljs.devtools.api/watch
+  (-> `shadow.cljs.devtools.api/release
     requiring-resolve
     (apply [:atemoia]))
   (-main))
