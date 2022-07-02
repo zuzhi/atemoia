@@ -8,9 +8,19 @@
             [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :as interceptor]
             [next.jdbc :as jdbc])
-  (:import (java.net URI)))
+  (:import (java.net URI)
+           (org.graalvm.polyglot Context Source)))
 
 (set! *warn-on-reflection* true)
+
+(defn render
+  [^Context context state-str]
+  (-> (.getBindings context "js")
+    (.getMember "atemoia")
+    (.getMember "ssr")
+    (.invokeMember "render" (into-array Object [state-str]))
+    (.asString)))
+
 
 (defn database->jdbc-url
   [database-url]
@@ -27,8 +37,13 @@
     (str (URI. "jdbc" (str base-uri) nil))))
 
 (defn index
-  [_]
-  (let [html [:html {:lang "en"}
+  [{::keys [ssr atm-conn]}]
+  (let [json-state-str (json/generate-string (try
+                                               {:todos (jdbc/execute! atm-conn
+                                                         ["SELECT * FROM todo"])}
+                                               (catch Throwable ex
+                                                 {:error (ex-message ex)})))
+        html [:html {:lang "en"}
               [:head
                [:meta {:charset "UTF-8"}]
                [:link {:rel "icon" :href "data:"}]
@@ -40,7 +55,9 @@
                        :content "A simple full-stack clojure app"}]
                [:title "atemoia"]]
               [:body
-               [:div {:id "atemoia"} "loading ..."]
+               [:div {:id         "atemoia"
+                      :data-state json-state-str}
+                (h/raw (render ssr json-state-str))]
                [:script {:src "/atemoia/main.js"}]]]]
     {:body    (->> html
                 (h/html {:mode :html})
@@ -103,12 +120,19 @@
   (let [env (System/getenv)
         port (parse-long (get env "PORT" "8080"))
         database-url (get env "DATABASE_URL" "postgres://postgres:postgres@127.0.0.1:5432/postgres")
+        ssr (doto (Context/create (into-array String ["js"]))
+              (.eval (.build (Source/newBuilder "js"
+                               (io/reader (or (io/resource "ssr.js")
+                                            (io/file "target" "classes" "ssr.js")))
+                               "ssr.js"))))
         atm-conn-jdbc-url (database->jdbc-url database-url)]
     (swap! state
       (fn [st]
         (some-> st http/stop)
+        (some-> st ^Context (::ssr) .close)
         (-> {::http/port      port
              ::atm-conn       {:jdbcUrl atm-conn-jdbc-url}
+             ::ssr            ssr
              ::http/file-path "target/classes/public"
              ::http/host      "0.0.0.0"
              ::http/type      :jetty
@@ -127,7 +151,8 @@
     (apply []))
   (-> `shadow.cljs.devtools.api/watch
     requiring-resolve
-    (apply [:atemoia]))
+    (doto (apply [:atemoia]))
+    (doto (apply [:ssr])))
   (-main))
 
 (comment

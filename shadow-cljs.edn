@@ -3,4 +3,7 @@
                     :output-dir "target/classes/public/atemoia"
                     :asset-path "/atemoia"
                     :modules    {:main {:init-fn atemoia.client/start}}
-                    :devtools   {:after-load atemoia.client/after-load}}}}
+                    :devtools   {:after-load atemoia.client/after-load}}
+          :ssr     {:target    :graaljs
+                    :output-to "target/classes/ssr.js"
+                    :entries   [atemoia.ssr]}}}

@@ -4,13 +4,14 @@
     <setting name="displayName" value="REPL" />
     <setting name="replType" value="NREPL" />
     <setting name="execution" value="INTELLIJ" />
-    <setting name="jvmArgs" value="" />
+    <setting name="jvmArgs" value="-Dpolyglot.engine.WarnInterpreterOnly=false" />
     <setting name="parameters" value="" />
     <setting name="workingDir" value="$PROJECT_DIR$" />
     <setting name="profiles" value="" />
     <setting name="aliases" value="" />
     <shortenClasspath name="ARGS_FILE" />
     <setting name="fixLineNumbers" value="false" />
+    <setting name="focusEditor" value="false" />
     <method v="2" />
   </configuration>
 </component>

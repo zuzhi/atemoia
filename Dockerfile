@@ -11,14 +11,14 @@ RUN adduser -D atemoia
 USER atemoia
 WORKDIR /home/atemoia
 COPY --chown=atemoia ./deps.edn ./
-RUN clojure -A:dev -P && clojure -P
+RUN clojure -A:dev -P --report stderr && clojure -P --report stderr
 COPY --chown=atemoia . .
 COPY --from=node --chown=atemoia /home/atemoia/node_modules node_modules
-RUN clojure -A:dev -M -m atemoia.build
+RUN clojure -A:dev -M --report stderr -m atemoia.build
 
 FROM openjdk:18-jdk-alpine
 RUN adduser -D atemoia
 USER atemoia
 WORKDIR /home/atemoia
 COPY --from=clojure --chown=atemoia /home/atemoia/target/atemoia.jar ./
-CMD ["java", "-jar", "atemoia.jar"]
+CMD ["java", "-Dpolyglot.engine.WarnInterpreterOnly=false", "-jar", "atemoia.jar"]

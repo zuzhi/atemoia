@@ -1,8 +1,9 @@
 (ns atemoia.client
-  (:require [reagent.core :as r]
+  (:require ["react-dom" :refer [hydrate]]
+            [reagent.core :as r]
             [reagent.dom :as rd]))
 
-(defonce state (r/atom {}))
+(defonce ^:dynamic state (r/atom {}))
 
 (defn fetch-todos
   []
@@ -67,9 +68,17 @@
 
 (defn start
   []
-  (some->> (js/document.getElementById "atemoia")
-    (rd/render [ui-root]))
-  (fetch-todos))
+  (let [container (js/document.getElementById "atemoia")
+        initial-state (some-> container
+                        ^js (.-dataset)
+                        .-state
+                        js/JSON.parse
+                        (js->clj :keywordize-keys true))]
+    (if initial-state
+      (do (reset! state initial-state)
+          (hydrate (r/as-element [ui-root]) container))
+      (do (fetch-todos)
+          (rd/render [ui-root] container)))))
 
 (defn after-load
   []
