@@ -1,7 +1,6 @@
 (ns atemoia.client
-  (:require ["react-dom" :refer [hydrate]]
-            [reagent.core :as r]
-            [reagent.dom :as rd]))
+  (:require ["react-dom/client" :as rc]
+            [reagent.core :as r]))
 
 (defonce ^:dynamic state (r/atom {}))
 
@@ -23,7 +22,7 @@
 (defn ui-root
   []
   (let [{:keys [error todos]} @state]
-    [:div
+    [:<>
      [:p "This is a sample clojure app to demonstrate how to use "
       [:a {:href "https://clojure.org/guides/tools_build"}
        "tools.build"]
@@ -66,6 +65,14 @@
         [:li {:key id}
          note])]]))
 
+(defonce *root (atom nil))
+
+
+(defn after-load
+  []
+  (some-> @*root
+    (.render (r/as-element [ui-root]))))
+
 (defn start
   []
   (let [container (js/document.getElementById "atemoia")
@@ -73,14 +80,12 @@
                         ^js (.-dataset)
                         .-state
                         js/JSON.parse
-                        (js->clj :keywordize-keys true))]
-    (if initial-state
-      (do (reset! state initial-state)
-          (hydrate (r/as-element [ui-root]) container))
-      (do (fetch-todos)
-          (rd/render [ui-root] container)))))
-
-(defn after-load
-  []
-  (some->> (js/document.getElementById "atemoia")
-    (rd/render [ui-root])))
+                        (js->clj :keywordize-keys true))
+        element (r/as-element [ui-root])]
+    (reset! *root
+      (if initial-state
+        (do (reset! state initial-state)
+            (rc/hydrateRoot container element))
+        (do
+          (fetch-todos)
+          (rc/createRoot container))))))
