@@ -67,7 +67,6 @@
 
 (defonce *root (atom nil))
 
-
 (defn after-load
   []
   (some-> @*root

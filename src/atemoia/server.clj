@@ -150,8 +150,8 @@
     (apply []))
   (-> `shadow.cljs.devtools.api/watch
     requiring-resolve
-    (doto (apply [:atemoia]))
-    (doto (apply [:ssr])))
+    (doto (apply [:atemoia])
+          (apply [:ssr])))
   (-main))
 
 (comment
