@@ -1,9 +1,13 @@
 {:deps   {:aliases [:dev]}
- :builds {:atemoia {:target     :browser
-                    :output-dir "target/classes/public/atemoia"
-                    :asset-path "/atemoia"
-                    :modules    {:main {:init-fn atemoia.client/start}}
-                    :devtools   {:after-load atemoia.client/after-load}}
-          :ssr     {:target    :graaljs
-                    :output-to "target/classes/ssr.js"
-                    :entries   [atemoia.ssr]}}}
+ :builds {:atemoia {:target      :browser
+                    :output-dir  "target/classes/public/atemoia"
+                    :asset-path  "/atemoia"
+                    :modules     {:main {:init-fn atemoia.client/start}}
+                    :devtools    {:after-load atemoia.client/after-load}
+                    :build-hooks [(shadow.cljs.build-report/hook
+                                    {:output-to "target/classes/public/report-atemoia.html"})]}
+          :ssr     {:target      :graaljs
+                    :output-to   "target/classes/ssr.js"
+                    :entries     [atemoia.ssr]
+                    :build-hooks [(shadow.cljs.build-report/hook
+                                    {:output-to "target/classes/public/report-ssr.html"})]}}}
