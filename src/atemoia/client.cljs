@@ -31,7 +31,9 @@
       [:a {:href "https://github.com/souenzzo/atemoia"}
        "README"]]
      [:form
-      {:on-submit (fn [^js evt]
+      {:method    "POST"
+       :action    "/todo"
+       :on-submit (fn [^js evt]
                     (.preventDefault evt)
                     (let [note-el (-> evt
                                     .-target

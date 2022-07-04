@@ -75,16 +75,25 @@
 
 (defn create-todo
   [{::keys [atm-conn]
-    :keys  [body]}]
-  (let [note (some-> body
-               io/reader
-               (json/parse-stream true)
-               :note)]
+    :keys  [body headers]}]
+  (let [note (if (string/starts-with? (get headers "content-type" "")
+                   "application/x-www-form-urlencoded")
+               (some-> body
+                 slurp
+                 (string/split #"&")
+                 (->> (map #(string/split % #"=" 2))
+                   (into {}))
+                 (get "note"))
+               (some-> body
+                 io/reader
+                 (json/parse-stream true)
+                 :note))]
     (jdbc/execute! atm-conn
       ["INSERT INTO todo (note) VALUES (?);
         DELETE FROM todo WHERE id IN (SELECT id FROM todo ORDER BY id DESC OFFSET 10)"
        note])
-    {:status 201}))
+    {:headers {"Location" (route/url-for ::index)}
+     :status  303}))
 
 (defn install-schema
   [{::keys [atm-conn]}]
