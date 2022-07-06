@@ -9,6 +9,7 @@
             [io.pedestal.interceptor :as interceptor]
             [next.jdbc :as jdbc])
   (:import (java.net URI)
+           (br.dev.zz.inverno Inverno)
            (org.graalvm.polyglot Context Source)))
 
 (set! *warn-on-reflection* true)
@@ -132,7 +133,7 @@
         database-url (System/getProperty "atemoia.server.atm-db-url"
                        "postgres://postgres:postgres@127.0.0.1:5432/postgres")
         ssr (doto (Context/create (into-array String ["js"]))
-              (.eval "js" "TextEncoder = class { encode() {} }")
+              (Inverno/wintercg)
               (.eval (.build (Source/newBuilder "js"
                                (io/reader (or (io/resource "ssr.js")
                                             (io/file "target" "classes" "ssr.js")))
