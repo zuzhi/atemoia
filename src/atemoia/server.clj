@@ -7,8 +7,12 @@
             [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :as interceptor]
+            [io.pedestal.log :as log]
             [next.jdbc :as jdbc])
-  (:import (java.net URI)))
+  (:import (java.net URI)
+           (org.eclipse.jetty.servlet ServletContextHandler ServletHolder)
+           (org.eclipse.jetty.websocket.api Session WebSocketConnectionListener WebSocketListener)
+           (org.eclipse.jetty.websocket.servlet WebSocketCreator WebSocketServlet WebSocketServletFactory)))
 
 (set! *warn-on-reflection* true)
 
@@ -94,24 +98,72 @@
         (interceptor/interceptor {:enter (fn [ctx]
                                            (update ctx :request merge service-map))})))))
 
+
+(defn with-ws-endpoint
+  [^ServletContextHandler ctx path ^WebSocketCreator creator]
+  (.addServlet ctx (ServletHolder.
+                     (proxy [WebSocketServlet] []
+                       (configure [^WebSocketServletFactory factory]
+                         (.setCreator factory creator))))
+    (str path))
+  ctx)
+
+
+
 (defonce state
   (atom nil))
+
 
 (defn -main
   [& _]
   (let [port (Long/getLong "atemoia.server.http-port" 8080)
         database-url (System/getProperty "atemoia.server.atm-db-url"
                        "postgres://postgres:postgres@127.0.0.1:5432/postgres")
-        atm-conn-jdbc-url (database->jdbc-url database-url)]
+        atm-conn-jdbc-url (database->jdbc-url database-url)
+        atm-conn {:jdbcUrl atm-conn-jdbc-url}
+        *ws-clients (atom {})
+        creator (reify WebSocketCreator
+                  (createWebSocket [this req resp]
+                    (let [*id (promise)]
+                      (reify WebSocketConnectionListener
+                        (onWebSocketConnect [this ws-session]
+                          (let [id (random-uuid)]
+                            (log/info :in "onWebSocketConnect"
+                              :ws id)
+                            (swap! *ws-clients assoc
+                              @(deliver *id id) ws-session)
+                            @(.sendStringByFuture (.getRemote ^Session ws-session)
+                               (json/generate-string (jdbc/execute! atm-conn
+                                                       ["SELECT * FROM todo"])))))
+                        (onWebSocketClose [this status-code reason]
+                          (log/info :in "onWebSocketClose"
+                            :code status-code
+                            :reason reason)
+                          (swap! *ws-clients dissoc @*id))
+                        (onWebSocketError [this cause]
+                          (log/error :in "onWebSocketError"
+                            :ws (deref *id 0 nil)
+                            :exception cause))
+                        WebSocketListener
+                        (onWebSocketText [this msg]
+                          (log/info :in "onWebSocketText"
+                            :msg msg)
+                          #_@(.sendStringByFuture (.getRemote ^Session @*conn)
+                               (str "echo - " ring-request)))
+                        (onWebSocketBinary [this payload offset length]
+                          (log/info :in "onWebSocketBinary"
+                            :payload (seq payload)))))))]
     (swap! state
       (fn [st]
         (some-> st http/stop)
-        (-> {::http/port      port
-             ::atm-conn       {:jdbcUrl atm-conn-jdbc-url}
-             ::http/file-path "target/classes/public"
-             ::http/host      "0.0.0.0"
-             ::http/type      :jetty
-             ::http/join?     false}
+        (-> {::http/port              port
+             ::atm-conn               atm-conn
+             ::http/file-path         "target/classes/public"
+             ::http/host              "0.0.0.0"
+             ::http/type              :jetty
+             ::http/container-options {:context-configurator (fn [ctx]
+                                                               (with-ws-endpoint ctx "/ws" creator))}
+             ::http/join?             false}
           create-service
           http/dev-interceptors
           http/create-server

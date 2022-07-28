@@ -72,10 +72,27 @@
   (some-> @*root
     (.render (r/as-element [ui-root]))))
 
+(defn start-ws
+  []
+  (let [ws (js/WebSocket. "ws://localhost:8080/ws")]
+    (.addEventListener ws "open"
+      (fn [evt] (js/console.log #js {:open evt})))
+    (.addEventListener ws "message"
+      (fn [evt]
+        (swap! state assoc :todos (js->clj (js/JSON.parse (.-data evt))
+                                    :keywordize-keys true))))
+    (.addEventListener ws "error"
+      (fn [evt] (js/console.error evt)))
+    (.addEventListener ws "close"
+      (fn [evt]
+        #_(js/setTimeout start-ws 1000)
+        (js/console.log #js {:close evt})))))
+
 (defn start
   []
   (let [container (js/document.getElementById "atemoia")
         root (rc/createRoot container)]
+    (start-ws)
     (fetch-todos)
     (.render root (r/as-element [ui-root]))
     (reset! *root root)))
