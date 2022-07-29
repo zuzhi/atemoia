@@ -6,18 +6,18 @@
 
 (defn fetch-todos
   []
-  (-> (js/fetch "/todo")
-    (.then (fn [response]
-             (when-not (.-ok response)
-               (throw (ex-info (.-statusText response)
-                        {:response response})))
-             (swap! state dissoc :error)
-             (.json response)))
-    (.then (fn [todos]
-             (swap! state assoc :todos (js->clj todos
-                                         :keywordize-keys true))))
-    (.catch (fn [ex]
-              (swap! state assoc :error (ex-message ex))))))
+  #_(-> (js/fetch "/todo")
+      (.then (fn [response]
+               (when-not (.-ok response)
+                 (throw (ex-info (.-statusText response)
+                          {:response response})))
+               (swap! state dissoc :error)
+               (.json response)))
+      (.then (fn [todos]
+               (swap! state assoc :todos (js->clj todos
+                                           :keywordize-keys true))))
+      (.catch (fn [ex]
+                (swap! state assoc :error (ex-message ex))))))
 
 (defn ui-root
   []
@@ -85,7 +85,7 @@
       (fn [evt] (js/console.error evt)))
     (.addEventListener ws "close"
       (fn [evt]
-        #_(js/setTimeout start-ws 1000)
+        (js/setTimeout start-ws 1000)
         (js/console.log #js {:close evt})))))
 
 (defn start
