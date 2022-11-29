@@ -1,7 +1,9 @@
 (ns atemoia.main-csv
   (:require
     [clojure.data.csv :as csv]
+    [clojure.java.io :as io]
     [clojure.string :as string]
+    [ring.core.protocols]
     [hiccup2.core :as h]
     [ring.adapter.jetty :as jetty])
   (:import (java.io StringWriter)
@@ -17,7 +19,10 @@
                                               ["a2" "b2" "c2"]])
                             w))]
       (def _csv-as-str csv-as-str)
-      {:body    csv-as-str
+      {:body    (reify ring.core.protocols/StreamableResponseBody
+                  (write-body-to-stream [this response output-stream]
+                    (with-open [w (io/writer output-stream)]
+                      (.write w csv-as-str))))
        :headers {;; Optional: customize the default file name etc.
                  ;; see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition#directives
                  #_#_"Content-Disposition" "attachment; filename=\"cool.html\""
