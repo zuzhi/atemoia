@@ -9,3 +9,4 @@ target/
 *.iml
 .nrepl-port
 start.sh
+.clj-kondo/

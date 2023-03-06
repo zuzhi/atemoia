@@ -23,13 +23,6 @@
   []
   (let [{:keys [error todos]} @state]
     [:<>
-     [:p "This is a sample clojure app to demonstrate how to use "
-      [:a {:href "https://clojure.org/guides/tools_build"}
-       "tools.build"]
-      " to create and deploy a full-stack clojure app."]
-     [:p "Checkout our "
-      [:a {:href "https://github.com/souenzzo/atemoia"}
-       "README"]]
      [:form
       {:on-submit (fn [^js evt]
                     (.preventDefault evt)
@@ -51,8 +44,9 @@
                         (.catch (fn [ex]
                                   (unlock false))))))}
       [:label
-       "note: "
+       "new: "
        [:input {:name "note"}]]]
+     [:p "todos"]
      (when error
        [:<>
         [:pre (str error)]
