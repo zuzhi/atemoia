@@ -38,7 +38,7 @@
                        :content "#000000"}]
                [:meta {:name    "description"
                        :content "A simple full-stack clojure app"}]
-               [:title "ascent"]]
+               [:title "ascent, manage (ascending) notes"]]
               [:body
                [:div {:id "atemoia"} "loading ..."]
                [:script {:src "/atemoia/main.js"}]]]]
