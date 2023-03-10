@@ -23,6 +23,32 @@
   []
   (let [{:keys [error todos]} @state]
     [:<>
+     ;;[:p "list"]
+     (when error
+       [:<>
+        [:pre (str error ", try install schema")]
+        [:button {:on-click (fn []
+                              (js/fetch "/install-schema"
+                                #js{:method "POST"}))}
+         "install schema"]])
+     [:ul
+      (for [{:todo/keys [id note]} todos]
+        ;; let first-id be first todo's id, make first-id red, second-id yellow
+        (let [first-id (-> todos
+                           first
+                           :todo/id)
+              second-id (-> todos
+                            second
+                            :todo/id)
+              last-id (-> todos
+                          last
+                          :todo/id)]
+          [:li {:value id}
+           [:span {:style {:color (if (= first-id id) "red"
+                                      (if (= second-id id) "tan"
+                                          (if (= last-id id) "green"
+                                              "black")))}}
+            note]]))]
      [:form
       {:on-submit (fn [^js evt]
                     (.preventDefault evt)
@@ -36,7 +62,7 @@
                                    (when success?
                                      (set! (.-value note-el) ""))
                                    (set! (.-disabled note-el) false))]
-                      (set! (.-disabled note-el) true)
+                      ;;(set! (.-disabled note-el) true)
                       (-> (js/fetch "/todo" #js{:method "POST"
                                                 :body   (js/JSON.stringify json-body)})
                         (.then (fn [response]
@@ -45,19 +71,8 @@
                                   (unlock false))))))}
       [:label
        "new: "
-       [:input {:name "note"}]]]
-     [:p "todos"]
-     (when error
-       [:<>
-        [:pre (str error)]
-        [:button {:on-click (fn []
-                              (js/fetch "/install-schema"
-                                #js{:method "POST"}))}
-         "install schema"]])
-     [:ul
-      (for [{:todo/keys [id note]} todos]
-        [:li {:key id}
-         note])]]))
+       [:input {:name "note"
+                :auto-focus true}]]]]))
 
 (defonce *root (atom nil))
 

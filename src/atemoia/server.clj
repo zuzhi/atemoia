@@ -65,7 +65,7 @@
                :note)]
     (jdbc/execute! atm-conn
       ["INSERT INTO todo (note) VALUES (?);
-        DELETE FROM todo WHERE id IN (SELECT id FROM todo ORDER BY id DESC OFFSET 10)"
+        DELETE FROM todo WHERE id IN (SELECT id FROM todo ORDER BY id DESC OFFSET 5)"
        note])
     {:status 201}))
 
@@ -99,7 +99,7 @@
 
 (defn -main
   [& _]
-  (let [port (Long/getLong "atemoia.server.http-port" 8080)
+  (let [port (Long/getLong "atemoia.server.http-port" 3000)
         database-url (System/getProperty "atemoia.server.atm-db-url"
                        "postgres://postgres:postgres@127.0.0.1:5432/postgres")
         atm-conn-jdbc-url (database->jdbc-url database-url)]
